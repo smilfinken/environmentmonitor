@@ -4,6 +4,7 @@
 #include <time.h>
 #include <nvs.h>
 #include <WiFi.h>
+#include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 
@@ -37,7 +38,6 @@ const int reportPort = 1234;
 const char *ntpHost = "pool.ntp.org";
 #endif
 
-WiFiClient wifiClient;
 uint32_t nvshandle;
 String id = "";
 char message[MAXMESSAGELENGTH];
@@ -92,6 +92,29 @@ bool initNonVolatile() {
   return true;
 }
 
+float getTemperature() {
+  float result = 20.1;
+  return result;
+}
+
+time_t getTimestamp() {
+  time_t timestamp;
+  time(&timestamp);
+  return timestamp;
+}
+
+char *getJsonData() {
+  StaticJsonBuffer<400> jsonBuffer;
+  JsonObject &root = jsonBuffer.createObject();
+  root["senderId"] = id;
+  root["temperature"] = getTemperature();
+  root["timestamp"] = getTimestamp();
+  size_t jsonMessageLength = root.measureLength() + 1;
+  char *jsonMessage = (char*)malloc(jsonMessageLength);
+  root.printTo(jsonMessage, jsonMessageLength);
+  return jsonMessage;
+}
+
 bool connectWifi() {
   snprintf(message, MAXMESSAGELENGTH, "connecting to %s...", ssid);
   printSerial(message);
@@ -134,32 +157,8 @@ bool configureTime() {
   return true;
 }
 
-float getTemperature() {
-  float result = 20.1;
-
-  return result;
-}
-
-time_t getTimestamp() {
-  time_t timestamp;
-  time(&timestamp);
-  return timestamp;
-}
-
-char *getMqttMessage() {
-  StaticJsonBuffer<200> jsonBuffer;
-  JsonObject &root = jsonBuffer.createObject();
-  root["senderId"] = id;
-  root["temperature"] = getTemperature();
-  root["timestamp"] = getTimestamp();
-  size_t mqttMessageLength = root.measureLength();
-  char *mqttMessage = (char*)malloc(mqttMessageLength);
-  root.printTo(mqttMessage, mqttMessageLength);
-  return mqttMessage;
-}
-
 bool publishSensorReadings() {
-  bool result = false;
+  WiFiClient wifiClient;
   PubSubClient mqttClient(wifiClient);
   mqttClient.setServer(mqttHost, mqttPort);
 
@@ -175,52 +174,28 @@ bool publishSensorReadings() {
     if (mqttClient.connect(id.c_str(), mqttUser, mqttPassword )) {
       printSerial(" connected\n");
 
-      if (mqttClient.publish(mqttTopic, getMqttMessage())) {
-        result = true;
-      }
+      bool result = mqttClient.publish(mqttTopic, getJsonData());
       mqttClient.disconnect();
+      return result;
     } else {
       delay(200);
       printSerial(".");
     }
   }
 
-  return result;
+  return false;
 }
 
 bool reportSensorReadings() {
   snprintf(message, MAXMESSAGELENGTH, "connecting to %s...", reportHost);
   printSerial(message);
 
-  if (!wifiClient.connect(reportHost, reportPort)) {
-    printSerial(" connection failed\n");
-  } else {
-    String url = "/report";
-    url += "?station=";
-    url += id;
-    url += "&temperature=";
-    url += getTemperature();
-    url += "&timestamp=";
-    url += getTimestamp();
-
-    wifiClient.print(String("GET ") + url + " HTTP/1.1\r\n" +
-                     "Host: " + reportHost + "\r\n" +
-                     "Connection: close\r\n\r\n");
-    while (!wifiClient.available()) {
-      if (millis() - start > MAXTIMEOUT) {
-        printSerial(" no reply.\n");
-        wifiClient.stop();
-        return false;
-      }
-      delay(500);
-      printSerial(".");
-    }
-    while (wifiClient.available()) {
-      printSerial(wifiClient.readStringUntil('\r'));
-    }
-  }
-
-  return true;
+  HTTPClient httpClient;
+  httpClient.begin(reportHost);
+  httpClient.addHeader("Content-Type", "application/json");
+  bool result = (httpClient.POST(getJsonData()) > 0);
+  httpClient.end();
+  return result;
 }
 
 void deepSleep() {
