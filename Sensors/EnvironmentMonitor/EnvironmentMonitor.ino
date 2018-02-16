@@ -34,7 +34,7 @@ const char *mqttUser = "user";
 const char *mqttPassword = "pw";
 const char *mqttTopic = "esp/test";
 const char *reportHost = "webserver.org";
-const int reportPort = 1234;
+const int reportPort = 80;
 const char *ntpHost = "pool.ntp.org";
 #endif
 
@@ -187,11 +187,11 @@ bool publishSensorReadings() {
 }
 
 bool reportSensorReadings() {
-  snprintf(message, MAXMESSAGELENGTH, "connecting to %s...", reportHost);
+  snprintf(message, MAXMESSAGELENGTH, "connecting to %s:%d...", reportHost, reportPort);
   printSerial(message);
 
   HTTPClient httpClient;
-  httpClient.begin(reportHost);
+  httpClient.begin(reportHost, reportPort);
   httpClient.addHeader("Content-Type", "application/json");
   bool result = (httpClient.POST(getJsonData()) > 0);
   httpClient.end();
@@ -200,7 +200,7 @@ bool reportSensorReadings() {
 
 void deepSleep() {
   int wakeupInterval = ((SLEEPTIME * 1000) - millis()) * 1000;
-  snprintf(message, MAXMESSAGELENGTH, "sleeping for %i seconds", wakeupInterval / 1000 / 1000);
+  snprintf(message, MAXMESSAGELENGTH, "\nsleeping for %i seconds", wakeupInterval / 1000 / 1000);
   printSerial(message);
 
   esp_sleep_enable_timer_wakeup(wakeupInterval);
