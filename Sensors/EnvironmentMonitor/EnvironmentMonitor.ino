@@ -8,7 +8,7 @@
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 
-#define MAXTIMEOUT 15 * 1000  // milliseconds (15 s)
+#define MAXTIMEOUT 20 * 1000  // milliseconds (20 s)
 #define MAXMESSAGELENGTH 100  // characters
 #define TZOFFSET 1 * 60 * 60  // seconds (2 h)
 #define DSTOFFSET 1 * 60 * 60 // seconds (1 h)
@@ -164,6 +164,7 @@ bool publishSensorReadings() {
 
   snprintf(message, MAXMESSAGELENGTH, "connecting to MQTT at %s:%d...", mqttHost, mqttPort);
   printSerial(message);
+  
   while (!mqttClient.connected()) {
     if (millis() - start > MAXTIMEOUT) {
       snprintf(message, MAXMESSAGELENGTH, " failed with state %d\n", mqttClient.state());
@@ -172,8 +173,7 @@ bool publishSensorReadings() {
     }
 
     if (mqttClient.connect(id.c_str(), mqttUser, mqttPassword )) {
-      printSerial(" connected\n");
-
+      printSerial(" connected, sending message\n");
       bool result = mqttClient.publish(mqttTopic, getJsonData());
       mqttClient.disconnect();
       return result;
@@ -202,6 +202,7 @@ void deepSleep() {
   int wakeupInterval = ((SLEEPTIME * 1000) - millis()) * 1000;
   snprintf(message, MAXMESSAGELENGTH, "sleeping for %i seconds", wakeupInterval / 1000 / 1000);
   printSerial(message);
+
   esp_sleep_enable_timer_wakeup(wakeupInterval);
   esp_deep_sleep_start();
 }
