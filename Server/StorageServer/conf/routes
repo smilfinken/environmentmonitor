@@ -1,0 +1,2 @@
+POST    /report         controllers.StorageController.report
+GET     /list           controllers.StorageController.list
