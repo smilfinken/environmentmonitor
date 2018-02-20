@@ -1,0 +1,49 @@
+@(labels: String, temperature: String, humidity: String, pressure: String)
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Temperature graph</title>
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/main.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/graph.css")">
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/chartist.min.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/chartist.custom.css")">
+        <script src="@routes.Assets.versioned("javascripts/chartist.min.js")" type="text/javascript"></script>
+    </head>
+    <body>
+        <div id="temperaturechart" class="ct-chart ct-double-octave"></div>
+        <div id="humiditychart" class="ct-chart ct-double-octave"></div>
+        <div id="pressurechart" class="ct-chart ct-double-octave"></div>
+        <script type="text/javascript">
+            var temperatureData = {
+                labels: @labels,
+                series: [ @temperature ]
+            };
+            var humidityData = {
+                labels: @labels,
+                series: [ @humidity ]
+            };
+            var pressureData = {
+                labels: @labels,
+                series: [ @pressure ]
+            };
+
+            var options = {
+                lineSmooth: Chartist.Interpolation.simple({
+                    divisor: 2
+                }),
+                fullWidth: true,
+                showPoint: false,
+                showLine: true,
+                axisX: {
+                    showLabel: false
+                }
+            };
+
+            var temperatureChart = new Chartist.Line('#temperaturechart', temperatureData, options);
+            var humidityChart = new Chartist.Line('#humiditychart', humidityData, options);
+            var pressureChart = new Chartist.Line('#pressurechart', pressureData, options);
+        </script>
+    </body>
+</html>
