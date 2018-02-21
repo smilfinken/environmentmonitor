@@ -24,9 +24,9 @@ public class StorageController extends Controller {
     public Result report() {
         JsonNode json = request().body().asJson();
 
-        String id = json.findPath("id").textValue();
-        if(id == null) {
-            return badRequest("missing parameter [name]");
+        String sensorId = json.findPath("sensorId").textValue();
+        if(sensorId == null) {
+            return badRequest("missing parameter [sensorId]");
         }
 
         Float temperature = json.findPath("temperature").floatValue();
@@ -44,7 +44,7 @@ public class StorageController extends Controller {
             return badRequest("missing parameter [humidity]");
         }
 
-        SensorReport sensorReport = new SensorReport(id, temperature, pressure, humidity);
+        SensorReport sensorReport = new SensorReport(sensorId, temperature, pressure, humidity);
         sensorReport.save();
 
         ObjectNode result = Json.newObject();
