@@ -44,7 +44,9 @@ public class StorageController extends Controller {
             return badRequest("missing parameter [humidity]");
         }
 
-        SensorReport sensorReport = new SensorReport(sensorId, temperature, pressure, humidity);
+        Float particles = json.findPath("particles").floatValue();
+
+        SensorReport sensorReport = new SensorReport(sensorId, temperature, pressure, humidity, particles);
         sensorReport.save();
 
         ObjectNode result = Json.newObject();

@@ -9,7 +9,7 @@ create table sensor_report (
   temperature                   float,
   pressure                      integer not null,
   humidity                      integer not null,
-  time_stamp                    bigint,
+  particles                     float,
   created                       bigint,
   constraint pk_sensor_report primary key (id)
 );

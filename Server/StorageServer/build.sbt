@@ -21,6 +21,9 @@ libraryDependencies += "org.awaitility" % "awaitility" % "2.0.0" % Test
 // Make verbose tests
 testOptions in Test := Seq(Tests.Argument(TestFrameworks.JUnit, "-a", "-v"))
 
+// java.xml.bind legacy
+libraryDependencies += "javax.xml.bind" % "jaxb-api" % "2.3.0"
+
 // packaging
 enablePlugins(JavaServerAppPackaging)
 enablePlugins(UpstartPlugin)
