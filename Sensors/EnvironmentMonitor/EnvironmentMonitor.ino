@@ -228,7 +228,7 @@ float getDustSensorSample() {
   delayMicroseconds(DUST_PULSETIME - DUST_SAMPLETIME);
   dustLedOff();
   float voltage = 3.3 * (raw / (float)ANALOG_MAXVALUE);
-  float density = fmin(0.0, 0.17 * voltage - 0.1);
+  float density = fmax(0.0, 0.17 * voltage - 0.1);
   //snprintf(message, MAXMESSAGELENGTH, "[ r = %d, v = %f, d = %f ]\n", raw, voltage, density);
   //printSerial(message);
   return density;
