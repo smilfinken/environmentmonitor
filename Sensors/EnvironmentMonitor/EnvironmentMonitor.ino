@@ -24,6 +24,7 @@ const char *reportUri = "/report";
 #include <ArduinoJson.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
+#include <Adafruit_APDS9960.h>
 
 int start = millis();
 bool serialInitialized = false;
@@ -39,10 +40,13 @@ char message[MAXMESSAGELENGTH];
 Adafruit_BME280 bme(BME_SCK, BME_MOSI, BME_MISO, BME_CS);
 bool bmeInitialized = false;
 
+Adafruit_APDS9960 apds;
+bool apdsInitialized = false;
+
 #define ACTIVE_LED 4
 
 #define ANALOG_MAXVALUE 4095.0
-#define DUST_READ 32
+#define DUST_READ 34
 #define DUST_LED 16
 #define DUST_SAMPLETIME 280
 #define DUST_PULSETIME 320
@@ -68,11 +72,11 @@ void printSerial(char *message) {
 }
 
 void showActivity() {
-  digitalWrite(ACTIVE_LED, LOW);
+  digitalWrite(ACTIVE_LED, HIGH);
 }
 
 void showSleep() {
-  digitalWrite(ACTIVE_LED, HIGH);
+  digitalWrite(ACTIVE_LED, LOW);
 }
 
 void deepSleep() {
@@ -133,7 +137,14 @@ bool initSensors() {
     return false;
   }
   bmeInitialized = true;
-  return bmeInitialized;
+
+  if (!apdsInitialized && !apds.begin()) {
+    printSerial("unable to initialize APDS-9960\n");
+    //return false;
+  }
+  apdsInitialized = true;
+
+  return bmeInitialized && apdsInitialized;
 }
 
 bool connectWifi() {
@@ -174,6 +185,10 @@ float getParticleCount() {
   return readDustSensor() / (float)MAXLOOPCOUNT;
 }
 
+int getRgbValue() {
+  return 255;
+}
+
 char *getJsonData() {
   StaticJsonBuffer<512> jsonBuffer;
   JsonObject &root = jsonBuffer.createObject();
@@ -182,6 +197,7 @@ char *getJsonData() {
   root["pressure"] = getPressure();
   root["humidity"] = getHumidity();
   root["particles"] = getParticleCount();
+  root["rgb"] = getRgbValue();
   size_t jsonMessageLength = root.measureLength() + 1;
   char *jsonMessage = (char*)malloc(jsonMessageLength);
   root.printTo(jsonMessage, jsonMessageLength);
@@ -229,7 +245,7 @@ float getDustSensorSample() {
   dustLedOff();
   float voltage = 3.3 * (raw / (float)ANALOG_MAXVALUE);
   float density = fmax(0.0, 0.17 * voltage - 0.1);
-  //snprintf(message, MAXMESSAGELENGTH, "[ r = %d, v = %f, d = %f ]\n", raw, voltage, density);
+  //snprintf(message, MAXMESSAGELENGTH, "[ r=%d, v=%f, d=%f ]\n", raw, voltage, density);
   //printSerial(message);
   return density;
 }
